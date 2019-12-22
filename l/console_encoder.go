@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strconv"
 	"sync"
 	"time"
 	"unicode/utf8"
-	"strconv"
 
 	"go.uber.org/zap/buffer"
 	"go.uber.org/zap/zapcore"

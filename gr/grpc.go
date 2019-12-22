@@ -7,23 +7,27 @@ import (
 	"log"
 	"net/http"
 	"net/textproto"
-	"runtime/debug"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/sunary/kitchen/e"
 	"github.com/sunary/kitchen/l"
 	"go.uber.org/zap/zapcore"
-	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
+
+const fallbackMessage = `{"error": "failed to marshal error message", "code": 500}`
+
+func init() {
+	log.Println("Use custom runtime.HTTPError for grpc")
+	runtime.HTTPError = DefaultHTTPError
+}
 
 // ValidateInterceptor returns middleware for validate
 func ValidateInterceptor() grpc.UnaryServerInterceptor {
@@ -73,7 +77,7 @@ func LogUnaryServerInterceptor(logger l.Logger, excepts ...error) grpc.UnaryServ
 			e := recover()
 			if e != nil {
 				logger.Error("Panic (Recovered)", l.Error(err), l.Stack())
-				err = grpc.Errorf(codes.Internal, "Internal Error (%v)", e)
+				err = status.Errorf(codes.Internal, "Internal Error (%v)", e)
 			}
 
 			if err == nil {
@@ -137,17 +141,15 @@ func UnmarshalJSON(data []byte, v interface{}) error {
 
 // DefaultHTTPError is extracted from grpc package
 func DefaultHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.Marshaler, w http.ResponseWriter, _ *http.Request, err error) {
-	const fallback = `{"error": "failed to marshal error message"}`
-
 	w.Header().Del("Trailer")
 	w.Header().Set("Content-Type", marshaler.ContentType())
 
 	body, buf, merr := MarshalErrorWithDetails(marshaler, err)
 	if merr != nil {
-		grpclog.Printf("Failed to marshal error message %q: %v", body, merr)
+		grpclog.Errorf("Failed to marshal error message %q: %v", body, merr)
 		w.WriteHeader(http.StatusInternalServerError)
-		if _, nerr := io.WriteString(w, fallback); nerr != nil {
-			grpclog.Printf("Failed to write response: %v", nerr)
+		if _, nerr := io.WriteString(w, fallbackMessage); nerr != nil {
+			grpclog.Errorf("Failed to write response: %v", nerr)
 		}
 
 		return
@@ -155,60 +157,27 @@ func DefaultHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runt
 
 	md, ok := runtime.ServerMetadataFromContext(ctx)
 	if !ok {
-		grpclog.Printf("Failed to extract ServerMetadata from context")
+		grpclog.Errorf("Failed to extract ServerMetadata from context")
 	}
 
 	handleForwardResponseServerMetadata(w, md)
 	handleForwardResponseTrailerHeader(w, md)
-	st := runtime.HTTPStatusFromCode(grpc.Code(err))
-	w.WriteHeader(st)
+	//w.WriteHeader(runtime.HTTPStatusFromCode(status.Code(err)))
+	w.WriteHeader(httpStatusFromCode(e.Code(status.Code(err))))
 	if _, err := w.Write(buf); err != nil {
-		grpclog.Printf("Failed to write response: %v", err)
+		grpclog.Errorf("Failed to write response: %v", err)
 	}
 
 	handleForwardResponseTrailer(w, md)
 }
 
-// Error returns new grpc Error with details
-func Error(code codes.Code, msg string, details ...proto.Message) error {
-	if msg == "" {
-		switch code {
-		case codes.NotFound:
-			msg = "Not Found"
-		case codes.InvalidArgument:
-			msg = "Invalid Argument"
-		case codes.Internal:
-			msg = "Internal Server Error"
-		case codes.Unauthenticated:
-			msg = "Unauthenticated"
-		case codes.PermissionDenied:
-			msg = "Permission Denied"
-		default:
-			msg = "Unknown"
-		}
+func httpStatusFromCode(code e.Code) int {
+	if code := e.DefaultHttpStatusFromCode(code); code != 0 {
+		return code
 	}
 
-	s := &spb.Status{
-		Code:    int32(code),
-		Message: msg,
-	}
-	if len(details) > 0 {
-		ds := make([]*any.Any, len(details))
-		for i, d := range details {
-			any, err := ptypes.MarshalAny(d)
-			if err != nil {
-				debug.PrintStack()
-				log.Println("Unable to marshal any")
-				ds[i], _ = ptypes.MarshalAny(status.New(codes.Internal, "Unable to marshal to grpc.Any").Proto())
-			} else {
-				ds[i] = any
-			}
-		}
-
-		s.Details = ds
-	}
-
-	return status.ErrorProto(s)
+	grpclog.Infof("Unknown gRPC error code: %v", code)
+	return http.StatusInternalServerError
 }
 
 // ErrorBody ...
@@ -221,8 +190,8 @@ type ErrorBody struct {
 // DecodeErrorWithDetails ...
 func DecodeErrorWithDetails(err error) *ErrorBody {
 	body := &ErrorBody{
-		Error: grpc.ErrorDesc(err),
-		Code:  int32(grpc.Code(err)),
+		Error: status.Convert(err).Message(),
+		Code:  int32(status.Code(err)),
 	}
 
 	// Append details
@@ -277,9 +246,4 @@ func handleForwardResponseTrailer(w http.ResponseWriter, md runtime.ServerMetada
 			w.Header().Add(tKey, vs[i])
 		}
 	}
-}
-
-func init() {
-	log.Println("Use custom runtime.HTTPError for grpc")
-	runtime.HTTPError = DefaultHTTPError
 }

@@ -15,7 +15,7 @@ import (
 )
 
 // Code ...
-type Code int
+type Code int32
 
 const (
 	// grpc error codes
@@ -65,10 +65,11 @@ func init() {
 // APIError ...
 type APIError struct {
 	Code    Code // A standard grpc error code.
-	Err     error
 	Message string
+	Err     error
 }
 
+// Error ...
 func Error(code Code, message string, errs ...error) *APIError {
 	if message == "" {
 		message = code.String()
@@ -110,6 +111,7 @@ func GRPCError(code codes.Code, msg string, details ...proto.Message) error {
 		Code:    int32(code),
 		Message: msg,
 	}
+
 	if len(details) > 0 {
 		ds := make([]*any.Any, len(details))
 		for i, d := range details {
@@ -129,6 +131,7 @@ func GRPCError(code codes.Code, msg string, details ...proto.Message) error {
 	return status.ErrorProto(s)
 }
 
+// DefaultHttpStatusFromCode ...
 func DefaultHttpStatusFromCode(code Code) int {
 	switch code {
 	case NoError:

@@ -1,8 +1,9 @@
 ### Go common
 
++ c: cache
 + e: error
 + gr: grpc
 + id: uuid
 + l: log
 + number
-+ string
++ str: string
