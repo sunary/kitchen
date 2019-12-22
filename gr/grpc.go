@@ -144,12 +144,12 @@ func DefaultHTTPError(ctx context.Context, mux *runtime.ServeMux, marshaler runt
 	w.Header().Del("Trailer")
 	w.Header().Set("Content-Type", marshaler.ContentType())
 
-	body, buf, merr := MarshalErrorWithDetails(marshaler, err)
-	if merr != nil {
-		grpclog.Errorf("Failed to marshal error message %q: %v", body, merr)
+	body, buf, mErr := MarshalErrorWithDetails(marshaler, err)
+	if mErr != nil {
+		grpclog.Errorf("Failed to marshal error message %q: %v", body, mErr)
 		w.WriteHeader(http.StatusInternalServerError)
-		if _, nerr := io.WriteString(w, fallbackMessage); nerr != nil {
-			grpclog.Errorf("Failed to write response: %v", nerr)
+		if _, wErr := io.WriteString(w, fallbackMessage); wErr != nil {
+			grpclog.Errorf("Failed to write response: %v", wErr)
 		}
 
 		return

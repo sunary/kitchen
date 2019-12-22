@@ -129,6 +129,24 @@ func GRPCError(code codes.Code, message string, details ...proto.Message) error 
 	return status.ErrorProto(s)
 }
 
+// ToGRPCError ...
+func ToGRPCError(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	if eErr, ok := err.(*APIError); ok {
+		return GRPCError(codes.Code(eErr.Code), eErr.Message)
+	}
+
+	code := status.Code(err)
+	if code == codes.Unknown {
+		return GRPCError(codes.Internal, "Internal Server Error")
+	}
+
+	return err
+}
+
 // DefaultHttpStatusFromCode ...
 func DefaultHttpStatusFromCode(code Code) int {
 	switch code {
