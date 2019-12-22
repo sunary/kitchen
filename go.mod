@@ -3,6 +3,7 @@ module github.com/sunary/kitchen
 go 1.12
 
 require (
+	github.com/go-redis/redis v6.15.6+incompatible
 	github.com/golang/protobuf v1.3.2
 	github.com/grpc-ecosystem/grpc-gateway v1.11.2
 	github.com/hashicorp/golang-lru v0.5.3

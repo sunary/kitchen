@@ -39,28 +39,26 @@ const (
 )
 
 var (
-	mapCodes = map[Code]string{}
+	mapCodes = map[Code]string{
+		NoError:            "ok",
+		Canceled:           "canceled",
+		Unknown:            "unknown",
+		InvalidArgument:    "invalid_argument",
+		DeadlineExceeded:   "deadline_exceeded",
+		NotFound:           "not_found",
+		AlreadyExists:      "already_exists",
+		PermissionDenied:   "permission_denied",
+		ResourceExhausted:  "resource_exhausted",
+		FailedPrecondition: "failed_precondition",
+		Aborted:            "aborted",
+		OutOfRange:         "out_of_range",
+		Unimplemented:      "unimplemented",
+		Internal:           "internal",
+		Unavailable:        "unavailable",
+		DataLoss:           "data_loss",
+		Unauthenticated:    "unauthenticated",
+	}
 )
-
-func init() {
-	mapCodes[NoError] = "ok"
-	mapCodes[Canceled] = "canceled"
-	mapCodes[Unknown] = "unknown"
-	mapCodes[InvalidArgument] = "invalid_argument"
-	mapCodes[DeadlineExceeded] = "deadline_exceeded"
-	mapCodes[NotFound] = "not_found"
-	mapCodes[AlreadyExists] = "already_exists"
-	mapCodes[PermissionDenied] = "permission_denied"
-	mapCodes[ResourceExhausted] = "resource_exhausted"
-	mapCodes[FailedPrecondition] = "failed_precondition"
-	mapCodes[Aborted] = "aborted"
-	mapCodes[OutOfRange] = "out_of_range"
-	mapCodes[Unimplemented] = "unimplemented"
-	mapCodes[Internal] = "internal"
-	mapCodes[Unavailable] = "unavailable"
-	mapCodes[DataLoss] = "data_loss"
-	mapCodes[Unauthenticated] = "unauthenticated"
-}
 
 // APIError ...
 type APIError struct {
@@ -102,26 +100,26 @@ func (c Code) String() string {
 }
 
 // GRPCError ...
-func GRPCError(code codes.Code, msg string, details ...proto.Message) error {
-	if msg == "" {
-		msg = code.String()
+func GRPCError(code codes.Code, message string, details ...proto.Message) error {
+	if message == "" {
+		message = code.String()
 	}
 
 	s := &pbstatus.Status{
 		Code:    int32(code),
-		Message: msg,
+		Message: message,
 	}
 
 	if len(details) > 0 {
 		ds := make([]*any.Any, len(details))
 		for i, d := range details {
-			any, err := ptypes.MarshalAny(d)
+			mAny, err := ptypes.MarshalAny(d)
 			if err != nil {
 				debug.PrintStack()
 				log.Println("Unable to marshal any")
 				ds[i], _ = ptypes.MarshalAny(status.New(codes.Internal, "Unable to marshal to grpc.Any").Proto())
 			} else {
-				ds[i] = any
+				ds[i] = mAny
 			}
 		}
 

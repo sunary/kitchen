@@ -18,13 +18,13 @@ func NewUUID() UUID {
 
 // NewUUIDFromString
 func NewUUIDFromString(s string) (*UUID, error) {
-	uuid, err := uuid.FromString(s)
+	uid, err := uuid.FromString(s)
 	if err != nil {
 		return nil, err
 	}
 
 	id := &UUID{}
-	for i, c := range uuid {
+	for i, c := range uid {
 		id[i] = c
 	}
 
