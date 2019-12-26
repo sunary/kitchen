@@ -4,11 +4,12 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"golang.org/x/text/transform"
-	"golang.org/x/text/unicode/norm"
 	"sort"
 	"strings"
 	"unicode"
+
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 )
 
 // ToTitle
@@ -28,7 +29,22 @@ func ToTitle(input string) string {
 	return output.String()
 }
 
+// ToCamelCase
+// ToCamelCase("CamelCase")
+// => "camelCase"
+func ToCamelCase(input string) string {
+	if input == "" {
+		return ""
+	}
+
+	a := []rune(input)
+	a[0] = unicode.ToLower(a[0])
+	return string(a)
+}
+
 // ToTitleNorm ...
+// ToTitleNorm("GRPCError")
+// => "GrpcError"
 func ToTitleNorm(input string) string {
 	var output strings.Builder
 	var upperCount int
@@ -61,7 +77,7 @@ func ToTitleNorm(input string) string {
 // ToSnake
 // ToSnake("ToSnake")
 // => "to_snake"
-func ToSnake(input string) string {
+func ToSnakeCase(input string) string {
 	var output strings.Builder
 	var upperCount int
 	for i, c := range input {

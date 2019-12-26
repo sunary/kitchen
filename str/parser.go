@@ -4,6 +4,17 @@ import (
 	"unicode"
 )
 
+// Coalesce returns the first non-empty string value
+func Coalesce(input ...string) string {
+	for _, s := range input {
+		if s != "" {
+			return s
+		}
+	}
+
+	return ""
+}
+
 // IsMediumPassword ...
 func IsMediumPassword(p string) bool {
 	if len(p) < 8 {
