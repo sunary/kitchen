@@ -2,6 +2,7 @@ package c
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/patrickmn/go-cache"
@@ -31,5 +32,9 @@ func (c round) Get(k string) (interface{}, bool) {
 	return c.Cache.Get(c.newKey(k))
 }
 func (c round) newKey(k string) string {
-	return k + "-" + strconv.Itoa(int(time.Now().Unix()/c.seconds*c.seconds))
+	bf := strings.Builder{}
+	bf.WriteString(k)
+	bf.WriteString("-")
+	bf.Write(strconv.AppendInt(nil, time.Now().Unix()/c.seconds*c.seconds, 10))
+	return bf.String()
 }

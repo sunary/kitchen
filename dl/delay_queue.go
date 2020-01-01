@@ -10,43 +10,39 @@ import (
 
 type DelayQueue struct {
 	*redis.Client
-	alias string
+	QueueName string
+	DelayName string
 }
 
 func NewDelayQueue(redisClient *redis.Client, alias string) *DelayQueue {
 	return &DelayQueue{
-		redisClient, alias,
+		redisClient,
+		"queue:" + alias,
+		"delay:" + alias,
 	}
 }
 
 func (q *DelayQueue) AddsDelay(values []interface{}, et time.Time) error {
 	score := float64(et.Unix())
-	delay := q.DelayName()
-
-	pipe := q.Client.Pipeline()
+	members := make([]redis.Z, len(values))
 	for i := range values {
 		b, _ := json.Marshal(values[i])
-		pipe.ZAdd(delay, redis.Z{
+		members[i] = redis.Z{
 			Score:  score,
 			Member: b,
-		})
+		}
 	}
 
-	_, err := pipe.Exec()
-	return err
+	return q.Client.ZAdd(q.DelayName, members...).Err()
 }
 
 func (q *DelayQueue) AddsQueue(values []interface{}) error {
-	pipe := q.Client.Pipeline()
-	queue := q.queueName()
-
+	members := make([]interface{}, len(values))
 	for i := range values {
-		b, _ := json.Marshal(values[i])
-		pipe.RPush(queue, b)
+		members[i], _ = json.Marshal(values[i])
 	}
 
-	_, err := pipe.Exec()
-	return err
+	return q.Client.RPush(q.QueueName, members...).Err()
 }
 
 func (q *DelayQueue) CheckAndSwap(n int64) (int, error) {
@@ -58,7 +54,7 @@ func (q *DelayQueue) CheckAndSwap(n int64) (int, error) {
 			Offset: 0,
 			Count:  n,
 		}
-		results, err := q.Client.ZRangeByScore(q.DelayName(), rangeBy).Result()
+		results, err := q.Client.ZRangeByScore(q.DelayName, rangeBy).Result()
 		if err != nil || len(results) == 0 {
 			return count, err
 		}
@@ -76,33 +72,32 @@ func (q *DelayQueue) CheckAndSwap(n int64) (int, error) {
 
 func (q *DelayQueue) swapQueue(members []string) error {
 	pipe := q.Client.Pipeline()
-	pipe.ZRemRangeByRank(q.DelayName(), 0, int64(len(members)))
-	queue := q.queueName()
+	pipe.ZRemRangeByRank(q.DelayName, 0, int64(len(members)))
 
+	mis := make([]interface{}, len(members))
 	for i := range members {
-		pipe.RPush(queue, members[i])
+		mis[i] = members[i]
 	}
 
+	pipe.RPush(q.QueueName, mis...)
 	_, err := pipe.Exec()
 	return err
 }
 
 func (q *DelayQueue) FetchQueue(n int64) ([]string, error) {
-	results, err := q.Client.LRange(q.queueName(), 0, n-1).Result()
+	results, err := q.Client.LRange(q.QueueName, 0, n-1).Result()
 	if err != nil || len(results) == 0 {
 		return nil, err
 	}
 
-	err = q.Client.LTrim(q.queueName(), int64(len(results)), -1).Err()
+	err = q.Client.LTrim(q.QueueName, int64(len(results)), -1).Err()
 	if err != nil {
-		pipe := q.Client.Pipeline()
-		queue := q.queueName()
-
+		members := make([]interface{}, len(results))
 		for i := range results {
-			pipe.RPush(queue, results[i])
+			members[i] = results[i]
 		}
 
-		pipe.Exec()
+		q.Client.RPush(q.QueueName, members...)
 		return nil, err
 	}
 
@@ -110,13 +105,5 @@ func (q *DelayQueue) FetchQueue(n int64) ([]string, error) {
 }
 
 func (q DelayQueue) Size() (int64, error) {
-	return q.Client.ZCount(q.DelayName(), "-inf", "+inf").Result()
-}
-
-func (q DelayQueue) queueName() string {
-	return "queue:" + q.alias
-}
-
-func (q DelayQueue) DelayName() string {
-	return "delay:" + q.alias
+	return q.Client.ZCount(q.DelayName, "-inf", "+inf").Result()
 }
