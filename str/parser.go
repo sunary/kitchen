@@ -4,7 +4,7 @@ import (
 	"unicode"
 )
 
-// Coalesce returns the first non-empty string value
+// Coalesce Returns the first non-empty string value
 func Coalesce(input ...string) string {
 	for _, s := range input {
 		if s != "" {
@@ -15,7 +15,7 @@ func Coalesce(input ...string) string {
 	return ""
 }
 
-// IsMediumPassword ...
+// IsMediumPassword Must contain lower, upper and numeric
 func IsMediumPassword(p string) bool {
 	if len(p) < 8 {
 		return false
@@ -42,7 +42,7 @@ func IsMediumPassword(p string) bool {
 	return has["upper"] && has["lower"] && has["numeric"]
 }
 
-// IsStrongPassword ...
+// IsStrongPassword Must contain lower, upper, numeric and special characters
 func IsStrongPassword(p string) bool {
 	if len(p) < 8 {
 		return false

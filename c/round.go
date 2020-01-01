@@ -32,9 +32,9 @@ func (c round) Get(k string) (interface{}, bool) {
 	return c.Cache.Get(c.newKey(k))
 }
 func (c round) newKey(k string) string {
-	bf := strings.Builder{}
-	bf.WriteString(k)
-	bf.WriteString("-")
-	bf.Write(strconv.AppendInt(nil, time.Now().Unix()/c.seconds*c.seconds, 10))
-	return bf.String()
+	var sb strings.Builder
+	sb.WriteString(k)
+	sb.WriteString("-")
+	sb.Write(strconv.AppendInt(nil, time.Now().Unix()/c.seconds*c.seconds, 10))
+	return sb.String()
 }

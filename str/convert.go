@@ -12,26 +12,26 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-// ToTitle
-// ToTitle("to_title")
-// => "ToTitle"
-func ToTitle(input string) string {
-	var output strings.Builder
+// ToTitleCase Convert snake_case to TitleCase
+// ToTitleCase("to_title_case")
+// => "ToTitleCase"
+func ToTitleCase(input string) string {
+	var sb strings.Builder
 	ss := strings.Split(input, "_")
 	for _, s := range ss {
 		if s == "" {
 			continue
 		}
 
-		output.WriteString(strings.ToUpper(string(s[0])) + s[1:])
+		sb.WriteString(strings.ToUpper(string(s[0])) + s[1:])
 	}
 
-	return output.String()
+	return sb.String()
 }
 
-// ToCamelCase
-// ToCamelCase("CamelCase")
-// => "camelCase"
+// ToCamelCase Convert TitleCase to camelCase
+// ToCamelCase("ToCamelCase")
+// => "toCamelCase"
 func ToCamelCase(input string) string {
 	if input == "" {
 		return ""
@@ -42,69 +42,69 @@ func ToCamelCase(input string) string {
 	return string(a)
 }
 
-// ToTitleNorm ...
-// ToTitleNorm("GRPCError")
+// NormTitleCase Normalize TitleCase
+// NormTitleCase("GRPCError")
 // => "GrpcError"
-func ToTitleNorm(input string) string {
-	var output strings.Builder
+func NormTitleCase(input string) string {
+	var sb strings.Builder
 	var upperCount int
 	for i, c := range input {
 		switch {
 		case isUppercase(c):
 			if upperCount == 0 || nextIsLower(input, i) {
-				output.WriteByte(byte(c))
+				sb.WriteByte(byte(c))
 			} else {
-				output.WriteByte(byte(c - 'A' + 'a'))
+				sb.WriteByte(byte(c - 'A' + 'a'))
 			}
 			upperCount++
 
 		case isLowercase(c):
-			output.WriteByte(byte(c))
+			sb.WriteByte(byte(c))
 			upperCount = 0
 
 		case isDigit(c):
 			if i == 0 {
 				panic("go-common/str: Identifier must start with a character: `" + input + "`")
 			}
-			output.WriteByte(byte(c))
+			sb.WriteByte(byte(c))
 			upperCount = 0
 		}
 	}
 
-	return output.String()
+	return sb.String()
 }
 
-// ToSnake
-// ToSnake("ToSnake")
-// => "to_snake"
+// ToSnakeCase Convert TitleCase to snake_case
+// ToSnakeCase("ToSnakeCase")
+// => "to_snake_case"
 func ToSnakeCase(input string) string {
-	var output strings.Builder
+	var sb strings.Builder
 	var upperCount int
 	for i, c := range input {
 		switch {
 		case isUppercase(c):
 			if i > 0 && (upperCount == 0 || nextIsLower(input, i)) {
-				output.WriteByte('_')
+				sb.WriteByte('_')
 			}
-			output.WriteByte(byte(c - 'A' + 'a'))
+			sb.WriteByte(byte(c - 'A' + 'a'))
 			upperCount++
 
 		case isLowercase(c):
-			output.WriteByte(byte(c))
+			sb.WriteByte(byte(c))
 			upperCount = 0
 
 		case isDigit(c):
 			if i == 0 {
 				panic("go-common/str: Identifier must start with a character: `" + input + "`")
 			}
-			output.WriteByte(byte(c))
+			sb.WriteByte(byte(c))
 
 		default:
 			panic("go-common/str: Invalid identifier: `" + input + "`")
 		}
 	}
 
-	return output.String()
+	return sb.String()
 }
 
 // nextIsLower The next character is lower case, but not the last 's'.
@@ -142,7 +142,7 @@ func isMn(r rune) bool {
 	return unicode.Is(unicode.Mn, r) // Mn: nonspacing marks
 }
 
-// Normalize ...
+// Normalize Remove diacritics
 func Normalize(input string) string {
 	input = strings.TrimSpace(input)
 
@@ -151,22 +151,22 @@ func Normalize(input string) string {
 
 	sortedSpecialRunes := []rune{'Đ', 'đ', 'Ł'}
 	replacedByRunes := []rune{'D', 'd', 'L'}
-	var result strings.Builder
+	var sb strings.Builder
 
 	for _, r := range strTransform {
 		pos := sort.Search(len(sortedSpecialRunes), func(i int) bool { return sortedSpecialRunes[i] >= r })
 		if pos != -1 && r == sortedSpecialRunes[pos] {
-			result.WriteRune(replacedByRunes[pos])
+			sb.WriteRune(replacedByRunes[pos])
 		} else {
-			result.WriteRune(r)
+			sb.WriteRune(r)
 		}
 	}
 
-	return result.String()
+	return sb.String()
 }
 
-// HashPassword ...
-func HashPassword(password, salt []byte) string {
+// Hash Using sha256 algorithm
+func Hash(password, salt []byte) string {
 	mac := hmac.New(sha256.New, salt)
 	mac.Write([]byte(password))
 	return hex.EncodeToString(mac.Sum(nil))
