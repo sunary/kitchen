@@ -99,6 +99,24 @@ func (c Code) String() string {
 	return "Code(" + strconv.Itoa(int(c)) + ")"
 }
 
+// ErrorCode ...
+func ErrorCode(err error) Code {
+	if err == nil {
+		return NoError
+	}
+
+	if err, ok := err.(*APIError); ok {
+		return err.Code
+	}
+
+	return Unknown
+}
+
+// ErrorMessage ...
+func ErrorMessage(err error) string {
+	return status.Convert(err).Message()
+}
+
 // GRPCError ...
 func GRPCError(code codes.Code, message string, details ...proto.Message) error {
 	if message == "" {
