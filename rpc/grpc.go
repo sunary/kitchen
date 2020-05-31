@@ -1,4 +1,4 @@
-package gr
+package rpc
 
 import (
 	"context"

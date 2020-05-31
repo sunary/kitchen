@@ -1,4 +1,4 @@
-package c
+package caching
 
 import (
 	"strconv"
@@ -13,6 +13,7 @@ type round struct {
 	seconds int64
 }
 
+// NewCacheRound ...
 func NewCacheRound(roundDuration time.Duration) Cache {
 	return &round{
 		cache.New(roundDuration, 2*roundDuration),
@@ -20,21 +21,25 @@ func NewCacheRound(roundDuration time.Duration) Cache {
 	}
 }
 
+// Set ...
 func (c round) Set(k string, x interface{}) {
 	c.Cache.Set(c.newKey(k), x, cache.DefaultExpiration)
 }
 
+// Add ...
 func (c round) Add(k string, x interface{}) error {
 	return c.Cache.Add(c.newKey(k), x, cache.DefaultExpiration)
 }
 
+// Get ...
 func (c round) Get(k string) (interface{}, bool) {
 	return c.Cache.Get(c.newKey(k))
 }
+
 func (c round) newKey(k string) string {
 	var sb strings.Builder
 	sb.WriteString(k)
 	sb.WriteString("-")
-	sb.Write(strconv.AppendInt(nil, time.Now().Unix()/c.seconds*c.seconds, 10))
+	sb.Write(strconv.AppendInt(nil, time.Now().Unix()/c.seconds, 10))
 	return sb.String()
 }

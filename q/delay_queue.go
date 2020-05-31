@@ -1,4 +1,4 @@
-package dl
+package q
 
 import (
 	"encoding/json"
@@ -8,12 +8,14 @@ import (
 	"github.com/go-redis/redis"
 )
 
+// DelayQueue ...
 type DelayQueue struct {
 	*redis.Client
 	QueueName string
 	DelayName string
 }
 
+// NewDelayQueue ...
 func NewDelayQueue(redisClient *redis.Client, alias string) *DelayQueue {
 	return &DelayQueue{
 		redisClient,
@@ -22,6 +24,7 @@ func NewDelayQueue(redisClient *redis.Client, alias string) *DelayQueue {
 	}
 }
 
+// AddsDelay ...
 func (q *DelayQueue) AddsDelay(values []interface{}, et time.Time) error {
 	score := float64(et.Unix())
 	members := make([]redis.Z, len(values))
@@ -36,6 +39,7 @@ func (q *DelayQueue) AddsDelay(values []interface{}, et time.Time) error {
 	return q.Client.ZAdd(q.DelayName, members...).Err()
 }
 
+// AddsQueue ...
 func (q *DelayQueue) AddsQueue(values []interface{}) error {
 	members := make([]interface{}, len(values))
 	for i := range values {
@@ -45,6 +49,7 @@ func (q *DelayQueue) AddsQueue(values []interface{}) error {
 	return q.Client.RPush(q.QueueName, members...).Err()
 }
 
+// CheckAndSwap ...
 func (q *DelayQueue) CheckAndSwap(n int64) (int, error) {
 	count := 0
 	for {
@@ -66,8 +71,6 @@ func (q *DelayQueue) CheckAndSwap(n int64) (int, error) {
 
 		count += len(results)
 	}
-
-	return count, nil
 }
 
 func (q *DelayQueue) swapQueue(members []string) error {
@@ -84,6 +87,7 @@ func (q *DelayQueue) swapQueue(members []string) error {
 	return err
 }
 
+// FetchQueue ...
 func (q *DelayQueue) FetchQueue(n int64) ([]string, error) {
 	results, err := q.Client.LRange(q.QueueName, 0, n-1).Result()
 	if err != nil || len(results) == 0 {
@@ -104,6 +108,7 @@ func (q *DelayQueue) FetchQueue(n int64) ([]string, error) {
 	return results, nil
 }
 
+// Size ...
 func (q DelayQueue) Size() (int64, error) {
 	return q.Client.ZCount(q.DelayName, "-inf", "+inf").Result()
 }

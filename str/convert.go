@@ -1,16 +1,25 @@
 package str
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"sort"
 	"strings"
 	"unicode"
 
+	"golang.org/x/text/runes"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
 )
+
+// Coalesce Returns the first non-empty string value
+func Coalesce(input ...string) string {
+	for _, s := range input {
+		if s != "" {
+			return s
+		}
+	}
+
+	return ""
+}
 
 // ToTitleCase Convert snake_case to TitleCase
 // ToTitleCase("to_title_case")
@@ -138,36 +147,22 @@ func isUppercase(r rune) bool {
 	return r >= 'A' && r <= 'Z'
 }
 
-func isMn(r rune) bool {
-	return unicode.Is(unicode.Mn, r) // Mn: nonspacing marks
-}
-
 // Normalize Remove diacritics
 func Normalize(input string) string {
 	input = strings.TrimSpace(input)
 
-	t := transform.Chain(norm.NFD, transform.RemoveFunc(isMn), norm.NFC)
-	strTransform, _, _ := transform.String(t, input)
+	rMapping := func(r rune) rune {
+		sortedSpecialRunes := []rune{'Đ', 'đ', 'Ł'}
+		replacedByRunes := []rune{'D', 'd', 'L'}
 
-	sortedSpecialRunes := []rune{'Đ', 'đ', 'Ł'}
-	replacedByRunes := []rune{'D', 'd', 'L'}
-	var sb strings.Builder
-
-	for _, r := range strTransform {
 		pos := sort.Search(len(sortedSpecialRunes), func(i int) bool { return sortedSpecialRunes[i] >= r })
 		if pos != -1 && r == sortedSpecialRunes[pos] {
-			sb.WriteRune(replacedByRunes[pos])
-		} else {
-			sb.WriteRune(r)
+			return replacedByRunes[pos]
 		}
+		return r
 	}
 
-	return sb.String()
-}
-
-// Hash Using sha256 algorithm
-func Hash(password, salt []byte) string {
-	mac := hmac.New(sha256.New, salt)
-	mac.Write([]byte(password))
-	return hex.EncodeToString(mac.Sum(nil))
+	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC, runes.Map(rMapping))
+	strTransform, _, _ := transform.String(t, input)
+	return strTransform
 }

@@ -17,17 +17,19 @@ import (
 // ConsoleEncoderName ...
 const ConsoleEncoderName = "custom_console"
 
-var _bufPool = buffer.NewPool()
+var (
+	_bufPool = buffer.NewPool()
 
-var _consolePool = sync.Pool{New: func() interface{} {
-	return &consoleEncoder{}
-}}
+	_consolePool = sync.Pool{New: func() interface{} {
+		return &consoleEncoder{}
+	}}
 
-var _sliceEncoderPool = sync.Pool{
-	New: func() interface{} {
-		return &sliceArrayEncoder{elems: make([]interface{}, 0, 2)}
-	},
-}
+	_sliceEncoderPool = sync.Pool{
+		New: func() interface{} {
+			return &sliceArrayEncoder{elems: make([]interface{}, 0, 2)}
+		},
+	}
+)
 
 func getSliceEncoder() *sliceArrayEncoder {
 	return _sliceEncoderPool.Get().(*sliceArrayEncoder)
@@ -80,11 +82,11 @@ func ShortColorCallerEncoder(caller zapcore.EntryCaller, enc zapcore.PrimitiveAr
 }
 
 func trimPath(c zapcore.EntryCaller) string {
-	// index := strings.Index(c.File, prefix)
+	// index := strings.Index(caching.File, prefix)
 	// if index < 0 {
-	// 	return c.TrimmedPath()
+	// 	return caching.TrimmedPath()
 	// }
-	// return c.File[index+len(prefix):]
+	// return caching.File[index+len(prefix):]
 	return c.TrimmedPath()
 }
 

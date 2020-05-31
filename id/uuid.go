@@ -58,7 +58,7 @@ func (u UUID) StringHashLike() string {
 
 // MarshalJSON implement for json encoding
 func (u UUID) MarshalJSON() ([]byte, error) {
-	if len(u) == 0 {
+	if u.IsZero() {
 		return []byte(`""`), nil
 	}
 

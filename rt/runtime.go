@@ -12,6 +12,7 @@ var (
 	ll = l.Logger{}
 )
 
+// HandleCrash ...
 func HandleCrash(handlers ...func(interface{})) {
 	if r := recover(); r != nil {
 		debug.PrintStack()
@@ -37,6 +38,7 @@ func logPanic(r interface{}) {
 	ll.Error("Recovered from panic", l.Object("e", r), l.String("caller", callers))
 }
 
+// RunWorker ...
 func RunWorker(f func(), handlers ...func(interface{})) {
 	go func() {
 		defer HandleCrash(handlers...)
@@ -45,6 +47,7 @@ func RunWorker(f func(), handlers ...func(interface{})) {
 	}()
 }
 
+// RunWorkerUtilStop ...
 func RunWorkerUtilStop(f func(), stopCh <-chan struct{}, handlers ...func(interface{})) {
 	go func() {
 		for {

@@ -32,7 +32,7 @@ var (
 	Time        = zap.Time
 )
 
-// UUID wraps for zap.Error.
+// ID wraps UUID.
 func ID(id id.UUID) zapcore.Field {
 	return String("id", id.String())
 }
@@ -59,6 +59,7 @@ type obj struct {
 	v interface{}
 }
 
+// String ...
 func (o obj) String() string {
 	return pp.Sprint(o.v)
 }

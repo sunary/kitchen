@@ -4,9 +4,11 @@ go 1.12
 
 require (
 	github.com/go-redis/redis v6.15.6+incompatible
+	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/golang/protobuf v1.3.2
 	github.com/grpc-ecosystem/grpc-gateway v1.11.2
 	github.com/hashicorp/golang-lru v0.5.3
+	github.com/jinzhu/gorm v1.9.12
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/mattn/go-colorable v0.1.2 // indirect

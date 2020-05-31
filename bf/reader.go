@@ -1,7 +1,6 @@
-package buffer
+package bf
 
 import (
-	"bufio"
 	"errors"
 	"io"
 )
@@ -14,6 +13,7 @@ var (
 	errTooLarge      = errors.New("BufferReader: make byte slice too large")
 )
 
+// BufferReader ...
 type BufferReader struct {
 	buf    []byte
 	reader io.Reader
@@ -22,6 +22,7 @@ type BufferReader struct {
 	err    error
 }
 
+// NewBufferReader ...
 func NewBufferReader(reader io.Reader, size int) *BufferReader {
 	return &BufferReader{
 		reader: reader,
@@ -30,6 +31,7 @@ func NewBufferReader(reader io.Reader, size int) *BufferReader {
 	}
 }
 
+// Reset ...
 func (br *BufferReader) Reset() {
 	if br.w > br.r {
 		copy(br.buf, br.buf[br.r:br.w])
@@ -39,6 +41,7 @@ func (br *BufferReader) Reset() {
 	br.r = 0
 }
 
+// ReadFull ...
 func (br *BufferReader) ReadFull(min int) (data []byte, err error) {
 	if br.reader == nil {
 		return nil, errReaderIsNil
@@ -95,6 +98,7 @@ func (br *BufferReader) fill() {
 	br.err = errNoProgress
 }
 
+// Grow ...
 func (br *BufferReader) Grow(n int) {
 	defer func() {
 		if recover() != nil {
@@ -116,14 +120,4 @@ func (br *BufferReader) Grow(n int) {
 	br.w = br.w - br.r
 	br.r = 0
 	br.buf = buf
-}
-
-type BufferWriter struct {
-	*bufio.Writer
-}
-
-func NewBufferWriter(wr io.Writer, size int) *BufferWriter {
-	return &BufferWriter{
-		Writer: bufio.NewWriterSize(wr, size),
-	}
 }
