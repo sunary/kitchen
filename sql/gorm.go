@@ -37,7 +37,7 @@ func SaveBulk(db *gorm.DB, tableName string, bulks []interface{}) error {
 			phStrs[j] = placeholderStrs
 		}
 
-		smt := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s", tableName, fields, strings.Join(phStrs, ","))
+		smt := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s", tableName, fields, strings.Join(phStrs, ",\n"))
 		err := tx.Exec(smt, valueArgs...).Error
 		if err != nil {
 			tx.Rollback()
@@ -49,14 +49,14 @@ func SaveBulk(db *gorm.DB, tableName string, bulks []interface{}) error {
 }
 
 func getTags(objs []interface{}) ([]string, []string) {
-	re := regexp.MustCompile(fmt.Sprintf("(?i)%s:([a-z0-9_-]+)", columnPrefix))
+	re := regexp.MustCompile(fmt.Sprintf("(?i)%s[a-z0-9_-]+", columnPrefix))
 	tags := make([]string, reflect.TypeOf(objs[0]).NumField())
 
 	for i := range objs {
 		v := reflect.ValueOf(objs[i])
 		t := reflect.TypeOf(objs[i])
 		for j := 0; j < t.NumField(); j++ {
-			if tags[j] != "" || isZeroOfUnderlyingType(v.Field(j)) {
+			if tags[j] != "" || isZeroOfUnderlyingType(v.Field(j).Interface()) {
 				continue
 			}
 
@@ -68,7 +68,7 @@ func getTags(objs []interface{}) ([]string, []string) {
 
 			tag = re.FindString(tag)
 			if strings.HasPrefix(tag, columnPrefix) {
-				tag = strings.TrimLeft(tag, columnPrefix)
+				tag = strings.TrimPrefix(tag, columnPrefix)
 			} else {
 				tag = str.ToSnakeCase(field.Name)
 			}
@@ -105,5 +105,5 @@ func sliceValues(objs []interface{}, tags, aTags []string) []interface{} {
 }
 
 func isZeroOfUnderlyingType(x interface{}) bool {
-	return x == nil || x == "" || reflect.DeepEqual(x, reflect.Zero(reflect.TypeOf(x)).Interface())
+	return reflect.DeepEqual(x, reflect.Zero(reflect.TypeOf(x)).Interface())
 }
