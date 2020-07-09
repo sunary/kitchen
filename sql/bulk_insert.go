@@ -12,16 +12,22 @@ import (
 
 const (
 	MaximumPlaceholders = 65536
+	QSLitePlaceholders  = 999
 	gormTag             = "gorm"
 	columnPrefix        = "column:"
 )
 
-func SaveBulk(db *gorm.DB, tableName string, bulks []interface{}) error {
+func SaveBulk(db *gorm.DB, bulks []interface{}) error {
+	tableName := getTableName(bulks[0])
+
 	tags, aTags := getTags(bulks)
 	objPlaceholders := len(aTags)
 	fields := strings.Join(aTags, ",")
 
 	batchSize := MaximumPlaceholders / objPlaceholders
+	if strings.HasPrefix(db.Dialect().GetName(), "sqlite") {
+		batchSize = QSLitePlaceholders / objPlaceholders
+	}
 	tx := db.Begin()
 
 	for i := 0; i < len(bulks)/batchSize+1; i++ {
