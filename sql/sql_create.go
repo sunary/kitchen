@@ -21,6 +21,7 @@ const (
 
 func SqlCreateTable(tb interface{}) string {
 	tableName := getTableName(tb)
+	maxLen := 0
 
 	fields := []string{}
 	indexes := []string{}
@@ -34,7 +35,6 @@ func SqlCreateTable(tb interface{}) string {
 		}
 
 		gts := strings.Split(gtag, ";")
-		fs := []string{}
 		columnDeclare := str.ToSnakeCase(field.Name)
 		defaultDeclare := ""
 		typeDeclare := ""
@@ -69,7 +69,11 @@ func SqlCreateTable(tb interface{}) string {
 			}
 		}
 
-		fs = append(fs, "`"+columnDeclare+"`")
+		if len(columnDeclare) > maxLen {
+			maxLen = len(columnDeclare)
+		}
+
+		fs := []string{columnDeclare}
 		if typeDeclare != "" {
 			fs = append(fs, typeDeclare)
 		} else {
@@ -85,7 +89,7 @@ func SqlCreateTable(tb interface{}) string {
 			fs = append(fs, "PRIMARY KEY")
 		}
 
-		fields = append(fields, "  "+strings.Join(fs, " "))
+		fields = append(fields, fmt.Sprintf("  `%s`%s%s", fs[0], strings.Repeat(" ", maxLen-len(fs[0])+1), strings.Join(fs[1:], " ")))
 	}
 
 	sql := []string{fmt.Sprintf("CREATE TABLE `%s`(\n%s\n);", tableName, strings.Join(fields, ",\n"))}
