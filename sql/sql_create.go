@@ -23,7 +23,7 @@ func SqlCreateTable(tb interface{}) string {
 	tableName := getTableName(tb)
 	maxLen := 0
 
-	fields := []string{}
+	fields := [][]string{}
 	indexes := []string{}
 	v := reflect.ValueOf(tb)
 	t := reflect.TypeOf(tb)
@@ -89,10 +89,15 @@ func SqlCreateTable(tb interface{}) string {
 			fs = append(fs, "PRIMARY KEY")
 		}
 
-		fields = append(fields, fmt.Sprintf("  `%s`%s%s", fs[0], strings.Repeat(" ", maxLen-len(fs[0])+1), strings.Join(fs[1:], " ")))
+		fields = append(fields, fs)
 	}
 
-	sql := []string{fmt.Sprintf("CREATE TABLE `%s`(\n%s\n);", tableName, strings.Join(fields, ",\n"))}
+	fs := []string{}
+	for _, f := range fields {
+		fs = append(fs, fmt.Sprintf("  `%s`%s%s", f[0], strings.Repeat(" ", maxLen-len(f[0])+1), strings.Join(fs[1:], " ")))
+	}
+
+	sql := []string{fmt.Sprintf("CREATE TABLE `%s`(\n%s\n);", tableName, strings.Join(fs, ",\n"))}
 	sql = append(sql, indexes...)
 	return strings.Join(sql, "\n")
 }
