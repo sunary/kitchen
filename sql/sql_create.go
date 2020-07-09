@@ -1,6 +1,7 @@
 package sql
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -11,13 +12,18 @@ import (
 const (
 	typePrefix      = "type:"
 	defaultPrefix   = "default:"
+	indexPrefix     = "index:"
 	isPrimaryKey    = "primary_key"
+	isUnique        = "unique"
 	isAutoIncrement = "auto_increment"
 	funcTableName   = "TableName"
 )
 
 func SqlCreateTable(tb interface{}) string {
+	tableName := getTableName(tb)
+
 	fields := []string{}
+	indexes := []string{}
 	v := reflect.ValueOf(tb)
 	t := reflect.TypeOf(tb)
 	for j := 0; j < t.NumField(); j++ {
@@ -28,23 +34,38 @@ func SqlCreateTable(tb interface{}) string {
 		}
 
 		gts := strings.Split(gtag, ";")
-		fs := []string{""}
+		fs := []string{}
 		columnDeclare := str.ToSnakeCase(field.Name)
 		defaultDeclare := ""
 		typeDeclare := ""
 		isPkDeclare := false
+		isUniqueDeclare := false
+		indexDeclare := ""
 		isAutoDeclare := false
 		for _, gt := range gts {
-			if strings.HasPrefix(gt, columnPrefix) {
-				columnDeclare = strings.TrimPrefix(gt, columnPrefix)
-			} else if strings.HasPrefix(gt, typePrefix) {
-				typeDeclare = strings.TrimPrefix(gt, typePrefix)
-			} else if strings.HasPrefix(gt, defaultPrefix) {
-				defaultDeclare = "DEFAULT " + strings.TrimPrefix(gt, defaultPrefix)
-			} else if strings.ToLower(gt) == isPrimaryKey {
+			gtLower := strings.ToLower(gt)
+			if strings.HasPrefix(gtLower, columnPrefix) {
+				columnDeclare = gt[len(columnPrefix):]
+			} else if strings.HasPrefix(gtLower, typePrefix) {
+				typeDeclare = gt[len(typePrefix):]
+			} else if strings.HasPrefix(gtLower, defaultPrefix) {
+				defaultDeclare = "DEFAULT " + gt[len(defaultPrefix):]
+			} else if strings.HasPrefix(gtLower, indexPrefix) {
+				indexDeclare = gt[len(indexPrefix):]
+			} else if gtLower == isPrimaryKey {
 				isPkDeclare = true
-			} else if strings.ToLower(gt) == isAutoIncrement {
+			} else if gtLower == isUnique {
+				isUniqueDeclare = true
+			} else if gtLower == isAutoIncrement {
 				isAutoDeclare = true
+			}
+		}
+
+		if indexDeclare != "" {
+			if isUniqueDeclare {
+				indexes = append(indexes, fmt.Sprintf("CREATE UNIQUE INDEX `%s` ON `%s`(`%s`);", indexDeclare, tableName, columnDeclare))
+			} else {
+				indexes = append(indexes, fmt.Sprintf("CREATE INDEX `%s` ON `%s`(`%s`);", indexDeclare, tableName, columnDeclare))
 			}
 		}
 
@@ -64,10 +85,12 @@ func SqlCreateTable(tb interface{}) string {
 			fs = append(fs, "PRIMARY KEY")
 		}
 
-		fields = append(fields, strings.Join(fs, " "))
+		fields = append(fields, "  "+strings.Join(fs, " "))
 	}
 
-	return "CREATE TABLE " + getTableName(tb) + "(" + strings.Join(fields, ",\n") + ");"
+	sql := []string{fmt.Sprintf("CREATE TABLE `%s`(\n%s\n);", tableName, strings.Join(fields, ",\n"))}
+	sql = append(sql, indexes...)
+	return strings.Join(sql, "\n")
 }
 
 func sqlType(v interface{}) string {
@@ -90,8 +113,9 @@ func sqlType(v interface{}) string {
 		return "TEXT"
 	case time.Time:
 		return "TIMESTAMP"
+	default:
+		return "UNSPECIFIED"
 	}
-	return "UNSPECIFIED"
 }
 
 func getTableName(t interface{}) string {
