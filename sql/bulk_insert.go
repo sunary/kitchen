@@ -55,7 +55,7 @@ func SaveBulk(db *gorm.DB, bulks []interface{}) error {
 }
 
 func getTags(objs []interface{}) ([]string, []string) {
-	re := regexp.MustCompile(fmt.Sprintf("(?i)%s[a-z0-9_-]+", columnPrefix))
+	re := regexp.MustCompile(fmt.Sprintf("(?i)%s[a-z0-9_\\-]+", columnPrefix))
 	tags := make([]string, reflect.TypeOf(objs[0]).NumField())
 
 	for i := range objs {

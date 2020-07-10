@@ -94,7 +94,7 @@ func SqlCreateTable(tb interface{}) string {
 
 	fs := []string{}
 	for _, f := range fields {
-		fs = append(fs, fmt.Sprintf("  `%s`%s%s", f[0], strings.Repeat(" ", maxLen-len(f[0])+1), strings.Join(fs[1:], " ")))
+		fs = append(fs, fmt.Sprintf("  `%s`%s%s", f[0], strings.Repeat(" ", maxLen-len(f[0])+1), strings.Join(f[1:], " ")))
 	}
 
 	sql := []string{fmt.Sprintf("CREATE TABLE `%s`(\n%s\n);", tableName, strings.Join(fs, ",\n"))}
