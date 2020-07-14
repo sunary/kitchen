@@ -57,9 +57,9 @@ func SqlCreateTable(tb interface{}) string {
 					for i := range idxFields {
 						idxQuotes[i] = fmt.Sprintf("`%s`", idxFields[i])
 					}
-					indexDeclare = fmt.Sprintf("idx_%s ON `%s`(%s);", strings.Join(idxFields, "_"), tableName, strings.Join(idxQuotes, ", "))
+					indexDeclare = fmt.Sprintf("`idx_%s` ON `%s`(%s);", strings.Join(idxFields, "_"), tableName, strings.Join(idxQuotes, ", "))
 				} else {
-					indexDeclare = fmt.Sprintf("%s ON `%s`(`%s`);", indexDeclare, tableName, indexDeclare)
+					indexDeclare = fmt.Sprintf("`%s` ON `%s`(`%s`);", indexDeclare, tableName, indexDeclare)
 				}
 			} else if gtLower == isPrimaryKey {
 				isPkDeclare = true
