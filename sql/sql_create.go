@@ -52,6 +52,15 @@ func SqlCreateTable(tb interface{}) string {
 				defaultDeclare = "DEFAULT " + gt[len(defaultPrefix):]
 			} else if strings.HasPrefix(gtLower, indexPrefix) {
 				indexDeclare = gt[len(indexPrefix):]
+				if idxFields := strings.Split(indexDeclare, ","); len(idxFields) > 1 {
+					idxQuotes := make([]string, len(idxFields))
+					for i := range idxFields {
+						idxQuotes[i] = fmt.Sprintf("`%s`", idxFields[i])
+					}
+					indexDeclare = fmt.Sprintf("idx_%s ON `%s`(%s);", strings.Join(idxFields, "_"), tableName, strings.Join(idxQuotes, ", "))
+				} else {
+					indexDeclare = fmt.Sprintf("%s ON `%s`(`%s`);", indexDeclare, tableName, indexDeclare)
+				}
 			} else if gtLower == isPrimaryKey {
 				isPkDeclare = true
 			} else if gtLower == isUnique {
@@ -63,9 +72,9 @@ func SqlCreateTable(tb interface{}) string {
 
 		if indexDeclare != "" {
 			if isUniqueDeclare {
-				indexes = append(indexes, fmt.Sprintf("CREATE UNIQUE INDEX `%s` ON `%s`(`%s`);", indexDeclare, tableName, columnDeclare))
+				indexes = append(indexes, "CREATE UNIQUE INDEX " + indexDeclare)
 			} else {
-				indexes = append(indexes, fmt.Sprintf("CREATE INDEX `%s` ON `%s`(`%s`);", indexDeclare, tableName, columnDeclare))
+				indexes = append(indexes, "CREATE INDEX " + indexDeclare)
 			}
 		}
 
