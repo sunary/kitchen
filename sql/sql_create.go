@@ -111,6 +111,10 @@ func SqlCreateTable(tb interface{}) string {
 	return strings.Join(sql, "\n")
 }
 
+func SqlDropTable(tb interface{}) string {
+	return fmt.Sprintf("DROP TABLE IF EXISTS `%s`;", getTableName(tb))
+}
+
 func sqlType(v interface{}) string {
 	switch v.(type) {
 	case bool:
