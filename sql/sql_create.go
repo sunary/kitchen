@@ -92,7 +92,7 @@ func SqlCreateTable(tb interface{}) string {
 			fs = append(fs, defaultDeclare)
 		}
 		if isAutoDeclare {
-			fs = append(fs, "AUTO INCREMENT")
+			fs = append(fs, "AUTO_INCREMENT")
 		}
 		if isPkDeclare {
 			fs = append(fs, "PRIMARY KEY")
