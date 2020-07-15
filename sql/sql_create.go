@@ -59,7 +59,7 @@ func SqlCreateTable(tb interface{}) string {
 					}
 					indexDeclare = fmt.Sprintf("`idx_%s` ON `%s`(%s);", strings.Join(idxFields, "_"), tableName, strings.Join(idxQuotes, ", "))
 				} else {
-					indexDeclare = fmt.Sprintf("`%s` ON `%s`(`%s`);", indexDeclare, tableName, indexDeclare)
+					indexDeclare = fmt.Sprintf("`%s` ON `%s`(`%s`);", indexDeclare, tableName, columnDeclare)
 				}
 			} else if gtLower == isPrimaryKey {
 				isPkDeclare = true
