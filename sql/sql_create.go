@@ -134,7 +134,7 @@ func sqlType(v interface{}) string {
 	case string:
 		return "TEXT"
 	case time.Time:
-		return "TIMESTAMP"
+		return "DATETIME"
 	default:
 		return "UNSPECIFIED"
 	}
