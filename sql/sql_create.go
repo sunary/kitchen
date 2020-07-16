@@ -116,6 +116,10 @@ func SqlDropTable(tb interface{}) string {
 }
 
 func sqlType(v interface{}) string {
+	if reflect.ValueOf(v).Kind() == reflect.Ptr {
+		return sqlType(reflect.Indirect(reflect.ValueOf(v)).Interface())
+	}
+
 	switch v.(type) {
 	case bool:
 		return "BOOLEAN"
