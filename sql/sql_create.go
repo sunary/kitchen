@@ -10,13 +10,15 @@ import (
 )
 
 const (
-	typePrefix      = "type:"
-	defaultPrefix   = "default:"
-	indexPrefix     = "index:"
-	isPrimaryKey    = "primary_key"
-	isUnique        = "unique"
-	isAutoIncrement = "auto_increment"
-	funcTableName   = "TableName"
+	typePrefix          = "type:"
+	defaultPrefix       = "default:"
+	indexPrefix         = "index:"
+	foreignKeyPrefix    = "foreignkey:"
+	associationFkPrefix = "association_foreignkey:"
+	isPrimaryKey        = "primary_key"
+	isUnique            = "unique"
+	isAutoIncrement     = "auto_increment"
+	funcTableName       = "TableName"
 )
 
 func SqlCreateTable(tb interface{}) string {
@@ -38,13 +40,17 @@ func SqlCreateTable(tb interface{}) string {
 		columnDeclare := str.ToSnakeCase(field.Name)
 		defaultDeclare := ""
 		typeDeclare := ""
+		isFkDecalre := false
 		isPkDeclare := false
 		isUniqueDeclare := false
 		indexDeclare := ""
 		isAutoDeclare := false
 		for _, gt := range gts {
 			gtLower := strings.ToLower(gt)
-			if strings.HasPrefix(gtLower, columnPrefix) {
+			if strings.HasPrefix(gtLower, foreignKeyPrefix) || strings.HasPrefix(gtLower, associationFkPrefix) {
+				isFkDecalre = true
+				break
+			} else if strings.HasPrefix(gtLower, columnPrefix) {
 				columnDeclare = gt[len(columnPrefix):]
 			} else if strings.HasPrefix(gtLower, typePrefix) {
 				typeDeclare = gt[len(typePrefix):]
@@ -70,11 +76,15 @@ func SqlCreateTable(tb interface{}) string {
 			}
 		}
 
+		if isFkDecalre {
+			continue
+		}
+
 		if indexDeclare != "" {
 			if isUniqueDeclare {
-				indexes = append(indexes, "CREATE UNIQUE INDEX " + indexDeclare)
+				indexes = append(indexes, "CREATE UNIQUE INDEX "+indexDeclare)
 			} else {
-				indexes = append(indexes, "CREATE INDEX " + indexDeclare)
+				indexes = append(indexes, "CREATE INDEX "+indexDeclare)
 			}
 		}
 
