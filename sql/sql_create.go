@@ -40,7 +40,7 @@ func SqlCreateTable(tb interface{}) string {
 		columnDeclare := str.ToSnakeCase(field.Name)
 		defaultDeclare := ""
 		typeDeclare := ""
-		isFkDecalre := false
+		isFkDeclare := false
 		isPkDeclare := false
 		isUniqueDeclare := false
 		indexDeclare := ""
@@ -48,7 +48,7 @@ func SqlCreateTable(tb interface{}) string {
 		for _, gt := range gts {
 			gtLower := strings.ToLower(gt)
 			if strings.HasPrefix(gtLower, foreignKeyPrefix) || strings.HasPrefix(gtLower, associationFkPrefix) {
-				isFkDecalre = true
+				isFkDeclare = true
 				break
 			} else if strings.HasPrefix(gtLower, columnPrefix) {
 				columnDeclare = gt[len(columnPrefix):]
@@ -76,7 +76,7 @@ func SqlCreateTable(tb interface{}) string {
 			}
 		}
 
-		if isFkDecalre {
+		if isFkDeclare {
 			continue
 		}
 
@@ -96,7 +96,7 @@ func SqlCreateTable(tb interface{}) string {
 		if typeDeclare != "" {
 			fs = append(fs, typeDeclare)
 		} else {
-			fs = append(fs, sqlType(v.Field(j).Interface()))
+			fs = append(fs, sqlType(v.Field(j).Interface(), ""))
 		}
 		if defaultDeclare != "" {
 			fs = append(fs, defaultDeclare)
@@ -125,30 +125,33 @@ func SqlDropTable(tb interface{}) string {
 	return fmt.Sprintf("DROP TABLE IF EXISTS `%s`;", getTableName(tb))
 }
 
-func sqlType(v interface{}) string {
+func sqlType(v interface{}, suffix string) string {
 	if reflect.ValueOf(v).Kind() == reflect.Ptr {
-		return sqlType(reflect.Indirect(reflect.ValueOf(v)).Interface())
+		return sqlType(reflect.Indirect(reflect.ValueOf(v)).Interface(), "NULL")
 	}
 
+	if suffix == "" {
+		suffix = "NOT NULL"
+	}
 	switch v.(type) {
 	case bool:
-		return "BOOLEAN"
+		return "BOOLEAN " + suffix
 	case int8, uint8:
-		return "TINYINT"
+		return "TINYINT " + suffix
 	case int16, uint16:
-		return "SMALLINT"
+		return "SMALLINT " + suffix
 	case int, int32, uint32:
-		return "INT"
+		return "INT " + suffix
 	case int64, uint64:
-		return "BIGINT"
+		return "BIGINT " + suffix
 	case float32:
-		return "FLOAT"
+		return "FLOAT " + suffix
 	case float64:
-		return "DOUBLE"
+		return "DOUBLE " + suffix
 	case string:
-		return "TEXT"
+		return "TEXT " + suffix
 	case time.Time:
-		return "DATETIME"
+		return "DATETIME " + suffix
 	default:
 		return "UNSPECIFIED"
 	}
