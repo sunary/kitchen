@@ -130,9 +130,9 @@ func sqlType(v interface{}, suffix string) string {
 		return sqlType(reflect.Indirect(reflect.ValueOf(v)).Interface(), "NULL")
 	}
 
-	if suffix == "" {
-		suffix = "NOT NULL"
-	}
+	//if suffix == "" {
+	//	suffix = "NOT NULL"
+	//}
 	switch v.(type) {
 	case bool:
 		return "BOOLEAN " + suffix
