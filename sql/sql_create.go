@@ -127,31 +127,35 @@ func SqlDropTable(tb interface{}) string {
 
 func sqlType(v interface{}, suffix string) string {
 	if reflect.ValueOf(v).Kind() == reflect.Ptr {
-		return sqlType(reflect.Indirect(reflect.ValueOf(v)).Interface(), "NULL")
+		vv := reflect.Indirect(reflect.ValueOf(v))
+		if vv.IsZero() {
+			return "UNSPECIFIED"
+		}
+		return sqlType(vv.Interface(), "NULL")
 	}
 
-	//if suffix == "" {
-	//	suffix = "NOT NULL"
-	//}
+	if suffix != "" {
+		suffix = " " + suffix
+	}
 	switch v.(type) {
 	case bool:
-		return "BOOLEAN " + suffix
+		return "BOOLEAN" + suffix
 	case int8, uint8:
-		return "TINYINT " + suffix
+		return "TINYINT" + suffix
 	case int16, uint16:
-		return "SMALLINT " + suffix
+		return "SMALLINT" + suffix
 	case int, int32, uint32:
-		return "INT " + suffix
+		return "INT" + suffix
 	case int64, uint64:
-		return "BIGINT " + suffix
+		return "BIGINT" + suffix
 	case float32:
-		return "FLOAT " + suffix
+		return "FLOAT" + suffix
 	case float64:
-		return "DOUBLE " + suffix
+		return "DOUBLE" + suffix
 	case string:
-		return "TEXT " + suffix
+		return "TEXT" + suffix
 	case time.Time:
-		return "DATETIME " + suffix
+		return "DATETIME" + suffix
 	default:
 		return "UNSPECIFIED"
 	}
