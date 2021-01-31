@@ -14,8 +14,10 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// ConsoleEncoderName ...
-const ConsoleEncoderName = "custom_console"
+const (
+	jsonEncoder   = "json"
+	customEncoder = "custom_console"
+)
 
 var (
 	_bufPool = buffer.NewPool()

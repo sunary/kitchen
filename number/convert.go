@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	GroupLen = 3
+	groupLen = 3
 )
 
 // ToThousandFormat To show your numbers in thousands
@@ -20,7 +20,7 @@ func ToThousandFormat(n int64, sep rune) string {
 		startOffset = 1
 	}
 
-	groups := (len(s) - startOffset - 1) / GroupLen
+	groups := (len(s) - startOffset - 1) / groupLen
 
 	if groups == 0 {
 		return s
@@ -30,15 +30,15 @@ func ToThousandFormat(n int64, sep rune) string {
 	sepBytes := make([]byte, sepLen)
 	_ = utf8.EncodeRune(sepBytes, sep)
 
-	buf := make([]byte, groups*(GroupLen+sepLen)+len(s)-(groups*GroupLen))
+	buf := make([]byte, groups*(groupLen+sepLen)+len(s)-(groups*groupLen))
 
-	startOffset += GroupLen
+	startOffset += groupLen
 	p := len(s)
 	q := len(buf)
 	for p > startOffset {
-		p -= GroupLen
-		q -= GroupLen
-		copy(buf[q:q+GroupLen], s[p:])
+		p -= groupLen
+		q -= groupLen
+		copy(buf[q:q+groupLen], s[p:])
 		q -= sepLen
 		copy(buf[q:], sepBytes)
 	}

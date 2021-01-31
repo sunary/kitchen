@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	ll = l.Logger{}
+	ll = l.New()
 )
 
 // HandleCrash ...

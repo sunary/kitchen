@@ -32,6 +32,15 @@ var (
 	Time        = zap.Time
 )
 
+func init() {
+	err := zap.RegisterEncoder(customEncoder, func(cfg zapcore.EncoderConfig) (zapcore.Encoder, error) {
+		return NewConsoleEncoder(cfg), nil
+	})
+	if err != nil {
+		panic(err)
+	}
+}
+
 // ID wraps UUID.
 func ID(id id.UUID) zapcore.Field {
 	return String("id", id.String())
@@ -52,6 +61,11 @@ func Stack() zapcore.Field {
 
 // Object ...
 func Object(key string, val interface{}) zapcore.Field {
+	return zap.Any(key, val)
+}
+
+// ObjectColor ...
+func ObjectColor(key string, val interface{}) zapcore.Field {
 	return zap.Stringer(key, Dump(val))
 }
 
@@ -77,8 +91,7 @@ func Interface(key string, val interface{}) zapcore.Field {
 	return zap.Reflect(key, val)
 }
 
-// New returns new zap.Logger
-func New() Logger {
+func loadLevel() zapcore.Level {
 	envLog := os.Getenv("LOG_LEVEL")
 	if envLog == "" {
 		envLog = "DEBUG"
@@ -87,11 +100,47 @@ func New() Logger {
 	var lv zapcore.Level
 	err := lv.UnmarshalText([]byte(envLog))
 	if err != nil {
-		panic("go-common/l: " + err.Error())
+		panic("kitchen/l: " + err.Error())
 	}
 
-	cfg := zap.Config{
-		Encoding:         ConsoleEncoderName,
+	return lv
+}
+
+func jsonLogCfg() zap.Config {
+	lv := loadLevel()
+	return zap.Config{
+		Encoding:         jsonEncoder,
+		Level:            zap.NewAtomicLevelAt(lv),
+		OutputPaths:      []string{"stderr"},
+		ErrorOutputPaths: []string{"stderr"},
+		EncoderConfig: zapcore.EncoderConfig{
+			TimeKey:       "time",
+			LevelKey:      "level",
+			NameKey:       "logger",
+			CallerKey:     "caller",
+			MessageKey:    "msg",
+			StacktraceKey: "stacktrace",
+
+			EncodeLevel:    zapcore.CapitalLevelEncoder,
+			EncodeTime:     zapcore.ISO8601TimeEncoder,
+			EncodeCaller:   zapcore.ShortCallerEncoder,
+			LineEnding:     zapcore.DefaultLineEnding,
+			EncodeDuration: zapcore.StringDurationEncoder,
+		},
+	}
+}
+
+// New returns new zap.Logger
+func New() Logger {
+	cfg := jsonLogCfg()
+	logger, _ := cfg.Build()
+	return Logger{logger}
+}
+
+func colorLogCfg() zap.Config {
+	lv := loadLevel()
+	return zap.Config{
+		Encoding:         customEncoder,
 		Level:            zap.NewAtomicLevelAt(lv),
 		OutputPaths:      []string{"stderr"},
 		ErrorOutputPaths: []string{"stderr"},
@@ -110,15 +159,10 @@ func New() Logger {
 			EncodeDuration: zapcore.StringDurationEncoder,
 		},
 	}
-	logger, _ := cfg.Build()
-	return Logger{logger}
 }
 
-func init() {
-	err := zap.RegisterEncoder(ConsoleEncoderName, func(cfg zapcore.EncoderConfig) (zapcore.Encoder, error) {
-		return NewConsoleEncoder(cfg), nil
-	})
-	if err != nil {
-		panic(err)
-	}
+func NewColor() Logger {
+	cfg := colorLogCfg()
+	logger, _ := cfg.Build()
+	return Logger{logger}
 }

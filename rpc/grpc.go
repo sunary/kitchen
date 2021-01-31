@@ -18,7 +18,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -38,7 +37,7 @@ func ValidateInterceptor() grpc.UnaryServerInterceptor {
 
 		val := req.(validate)
 		if err := val.Validate(); err != nil {
-			return nil, e.Error(e.FailedPrecondition, "Invalid parameters", err)
+			return nil, e.Error(e.Code(codes.FailedPrecondition), "Invalid parameters", err)
 		}
 
 		return handler(ctx, req)
@@ -51,6 +50,7 @@ func LogUnaryServerInterceptor(logger l.Logger, excepts ...error) grpc.UnaryServ
 	for _, err := range excepts {
 		m[err] = struct{}{}
 	}
+
 	getLogFn := func(v interface{}) (lg func(msg string, fields ...zapcore.Field)) {
 		if err, ok := v.(error); ok {
 			defer func() {
@@ -98,45 +98,6 @@ func LogUnaryServerInterceptor(logger l.Logger, excepts ...error) grpc.UnaryServ
 
 		return handler(ctx, req)
 	}
-}
-
-// ForwardMetadataUnaryServerInterceptor ...
-func ForwardMetadataUnaryServerInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		ctx = ForwardMetadata(ctx)
-		return handler(ctx, req)
-	}
-}
-
-// ForwardMetadata ...
-func ForwardMetadata(ctx context.Context) context.Context {
-	md, _ := metadata.FromIncomingContext(ctx)
-	return metadata.NewOutgoingContext(ctx, md)
-}
-
-var jSON = runtime.JSONPb{
-	OrigName:     true,
-	EmitDefaults: true,
-}
-
-// NewJSONDecoder ...
-func NewJSONDecoder(r io.Reader) runtime.Decoder {
-	return jSON.NewDecoder(r)
-}
-
-// NewJSONEncoder ...
-func NewJSONEncoder(w io.Writer) runtime.Encoder {
-	return jSON.NewEncoder(w)
-}
-
-// MarshalJSON encodes JSON in compatible with GRPC
-func MarshalJSON(v interface{}) ([]byte, error) {
-	return jSON.Marshal(v)
-}
-
-// UnmarshalJSON decodes JSON in compatible with GRPC
-func UnmarshalJSON(data []byte, v interface{}) error {
-	return jSON.Unmarshal(data, v)
 }
 
 // DefaultHTTPError is extracted from grpc package

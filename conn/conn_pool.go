@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	ConnectIdleTime = 30
+	connectIdleTime = 30
 )
 
 // Object ...
@@ -31,7 +31,7 @@ func NewConnectPool() *ConnectPool {
 		pools:   make(map[string]*Pool),
 		mincap:  5,
 		maxcap:  80,
-		timeout: int64(time.Second * ConnectIdleTime),
+		timeout: int64(time.Second * connectIdleTime),
 	}
 	go cp.autoRelease()
 
