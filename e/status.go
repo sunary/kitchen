@@ -15,6 +15,10 @@ type detailMsg struct {
 	detail string
 }
 
+const (
+	UnknownErrorCode = Code(2)
+)
+
 func NewProtoMessage(detail string) proto.Message {
 	return &detailMsg{
 		detail: detail,

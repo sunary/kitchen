@@ -6,8 +6,9 @@
 + **conn:** connection
 + **e:** error
 + **id:** uuid
++ **j:** map[string]string marshal/unmarshal
 + **l:** log
-+ **number**
++ **num** numeric
 + **q:** queue
 + **rpc:** grpc
 + **rt:** runtime
